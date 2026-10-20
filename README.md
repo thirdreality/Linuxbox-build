@@ -34,7 +34,8 @@ so moving to a new Armbian release is a one-line change.
 | main (trunk) | noble, resolute, trixie |
 
 The list is defined in [versions.conf](versions.conf). `vX.Y.Z` entries are tags; `vYY.MM` and `main` are
-branches and follow upstream HEAD at clone time.
+branches and follow upstream HEAD at clone time; add `--update` to move an existing branch checkout to the
+current upstream HEAD (`./build.sh --armbian main --release noble --update`).
 
 ## Requirements
 
@@ -126,5 +127,5 @@ armbian/<version>/          upstream Armbian checkout (git-ignored, never modifi
 
 ## License
 
-Armbian is GPL-2.0. Kernel and U-Boot patches follow the licenses of the respective projects (GPL-2.0).
+This project is licensed under GPL-2.0, see [LICENSE](LICENSE). Armbian is GPL-2.0. Kernel and U-Boot patches follow the licenses of the respective projects (GPL-2.0).
 Firmware blobs are redistributed as provided by their vendors.

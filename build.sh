@@ -2,11 +2,12 @@
 #
 # LinuxBox image build on top of an unmodified upstream Armbian checkout.
 #
-#   ./build.sh [--armbian <tag>] [--release <codename>] [--board <board>] [-- <extra compile.sh args>]
+#   ./build.sh [--armbian <tag>] [--release <codename>] [--board <board>] [--update] [-- <extra compile.sh args>]
 #
 # The Armbian tree lives in armbian/<tag>/ and is never edited; userpatches/
 # is synced into it before each build.  Each Armbian version keeps its own
 # cache/ and output/ inside armbian/<tag>/ (images: armbian/<tag>/output/images).
+# --update moves a branch checkout (main, vYY.MM) to the current upstream HEAD.
 
 set -euo pipefail
 
@@ -16,10 +17,11 @@ source "${HERE}/versions.conf"
 ARMBIAN_TAG="${ARMBIAN_DEFAULT_TAG}"
 RELEASE="bookworm"
 BOARD="linuxbox-hubv3"
+UPDATE=no
 EXTRA_ARGS=()
 
 usage() {
-	sed -n '3,9p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '3,10p' "$0" | sed 's/^# \{0,1\}//'
 	echo
 	echo "Supported Armbian versions and releases:"
 	for tag in "${!ARMBIAN_RELEASES[@]}"; do
@@ -28,11 +30,16 @@ usage() {
 	exit "${1:-0}"
 }
 
+need_value() {
+	[[ -n "${2:-}" && "$2" != -* ]] || { echo "Option $1 requires a value" >&2; usage 1; }
+}
+
 while [[ $# -gt 0 ]]; do
 	case "$1" in
-		--armbian) ARMBIAN_TAG="$2"; shift 2 ;;
-		--release) RELEASE="$2"; shift 2 ;;
-		--board) BOARD="$2"; shift 2 ;;
+		--armbian) need_value "$@"; ARMBIAN_TAG="$2"; shift 2 ;;
+		--release) need_value "$@"; RELEASE="$2"; shift 2 ;;
+		--board) need_value "$@"; BOARD="$2"; shift 2 ;;
+		--update) UPDATE=yes; shift ;;
 		-h | --help) usage 0 ;;
 		--) shift; EXTRA_ARGS=("$@"); break ;;
 		*) echo "Unknown option: $1" >&2; usage 1 ;;
@@ -56,6 +63,15 @@ if [[ -n "$(git -C "${armbian_dir}" status --porcelain --untracked-files=no)" ]]
 	git -C "${armbian_dir}" status --short --untracked-files=no >&2
 	exit 1
 fi
+if [[ "${UPDATE}" == yes ]]; then
+	if git -C "${armbian_dir}" describe --exact-match --tags HEAD > /dev/null 2>&1; then
+		echo "armbian/${ARMBIAN_TAG} is a tag; --update ignored"
+	else
+		git -C "${armbian_dir}" fetch --depth=1 origin "${ARMBIAN_TAG}"
+		git -C "${armbian_dir}" reset --keep FETCH_HEAD
+	fi
+fi
+echo "Armbian ${ARMBIAN_TAG}: $(git -C "${armbian_dir}" log -1 --format='%h %cd' --date=short)"
 
 rsync -a --delete "${HERE}/userpatches/" "${armbian_dir}/userpatches/"
 

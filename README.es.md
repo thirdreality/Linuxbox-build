@@ -34,7 +34,8 @@ edita, así que pasar a una nueva versión de Armbian es un cambio de una línea
 | main (trunk) | noble, resolute, trixie |
 
 La lista está en [versions.conf](versions.conf). Las entradas `vX.Y.Z` son tags; `vYY.MM` y `main` son ramas
-y siguen el HEAD de upstream en el momento de clonar.
+y siguen el HEAD de upstream en el momento de clonar; `--update` mueve un checkout de rama existente al HEAD
+actual de upstream (`./build.sh --armbian main --release noble --update`).
 
 ## Requisitos
 
@@ -126,5 +127,5 @@ armbian/<versión>/          checkout de Armbian original (ignorado por git, nun
 
 ## Licencia
 
-Armbian es GPL-2.0. Los parches de kernel y U-Boot siguen las licencias de sus proyectos (GPL-2.0).
+Este proyecto se distribuye bajo GPL-2.0, ver [LICENSE](LICENSE). Armbian es GPL-2.0. Los parches de kernel y U-Boot siguen las licencias de sus proyectos (GPL-2.0).
 Los firmwares se redistribuyen tal como los proporcionan sus fabricantes.

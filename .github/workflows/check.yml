@@ -1,0 +1,41 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash syntax
+        run: |
+          for f in build.sh versions.conf $(find userpatches -name '*.sh' -o -name '*.conf'); do
+            bash -n "$f"
+          done
+
+      - name: kernel config has no duplicate keys
+        run: |
+          dups=$(grep -E '^CONFIG_' userpatches/config/kernel/*.config | cut -d= -f1 | sort | uniq -d)
+          [ -z "$dups" ] || { echo "$dups"; exit 1; }
+
+      - name: versions.conf matches upstream 'supported' releases
+        run: |
+          source versions.conf
+          rc=0
+          for ref in "${!ARMBIAN_RELEASES[@]}"; do
+            rm -rf up && git init -q up
+            git -C up fetch -q --depth=1 --filter=blob:none "${ARMBIAN_GIT_URL}" "${ref}"
+            actual=$(for d in $(git -C up ls-tree --name-only FETCH_HEAD config/distributions/); do
+              [ "$(git -C up show "FETCH_HEAD:$d/support" 2>/dev/null)" = supported ] && basename "$d"
+            done | sort | xargs)
+            expected=$(echo ${ARMBIAN_RELEASES[$ref]} | tr ' ' '\n' | sort | xargs)
+            if [ "$actual" = "$expected" ]; then
+              echo "ok   ${ref}: ${actual}"
+            else
+              echo "FAIL ${ref}: versions.conf='${expected}' upstream='${actual}'"; rc=1
+            fi
+          done
+          exit $rc

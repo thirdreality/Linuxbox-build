@@ -11,11 +11,10 @@ function post_family_tweaks__linuxbox_bl706() {
 	deb="${WORKDIR}/linuxbox-bl706_${LINUXBOX_BL706_VERSION}_all.deb"
 
 	display_alert "Building linuxbox-bl706" "${LINUXBOX_BL706_VERSION}" "info"
-	run_host_command_logged mkdir -p "${pkg_root}/DEBIAN" "${pkg_root}/usr/lib/firmware/bl706" "${pkg_root}/usr/lib/systemd/system"
+	run_host_command_logged mkdir -p "${pkg_root}/DEBIAN" "${pkg_root}/usr/lib/firmware/bl706"
 	run_host_command_logged cp -r "${src}/partition_1m_images" "${src}/partition_2m_images" "${src}/pip-wheels" "${pkg_root}/usr/lib/firmware/bl706/"
 	run_host_command_logged tar -xzf "${src}/bflb_iot.tar.gz" --no-same-owner -C "${pkg_root}/usr/lib/firmware/bl706/"
 	run_host_command_logged install -m 755 "${src}/bl706_func.sh" "${pkg_root}/usr/lib/firmware/bl706/"
-	run_host_command_logged install -m 644 "${src}/bl706.service" "${pkg_root}/usr/lib/systemd/system/"
 
 	cat <<- EOF > "${pkg_root}/DEBIAN/control"
 		Package: linuxbox-bl706

@@ -33,7 +33,8 @@
 | v26.08（分支） | noble, resolute, trixie |
 | main（主干） | noble, resolute, trixie |
 
-列表定义在 [versions.conf](versions.conf)。`vX.Y.Z` 为 tag；`vYY.MM` 与 `main` 为分支，克隆时取上游最新提交。
+列表定义在 [versions.conf](versions.conf)。`vX.Y.Z` 为 tag；`vYY.MM` 与 `main` 为分支，克隆时取上游最新提交；
+加 `--update` 可将已有的分支检出更新到上游最新（`./build.sh --armbian main --release noble --update`）。
 
 ## 环境要求
 
@@ -123,5 +124,5 @@ armbian/<版本>/             上游 Armbian 源码（git 忽略，从不修改�
 
 ## 许可证
 
-Armbian 采用 GPL-2.0。内核与 U-Boot 补丁遵循各自项目的许可证（GPL-2.0）。
+本项目采用 GPL-2.0，见 [LICENSE](LICENSE)。Armbian 采用 GPL-2.0。内核与 U-Boot 补丁遵循各自项目的许可证（GPL-2.0）。
 固件按厂商提供的原样分发。
