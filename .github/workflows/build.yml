@@ -9,6 +9,9 @@ on:
       release:
         description: Release codename
         default: bookworm
+      build_host:
+        description: Docker image Armbian builds in
+        default: debian:bookworm
   push:
     tags: ["v*"]
 
@@ -37,8 +40,11 @@ jobs:
           sudo chown "$(id -u):$(id -g)" /mnt/armbian
           ln -sfn /mnt/armbian armbian
 
+      # non-root: Armbian relaunches itself in a container built FROM build_host (same gcc 12 as local Debian 12 builds)
       - name: Build image
-        run: sudo ./build.sh --armbian "${{ matrix.armbian }}" --release "${{ matrix.release }}"
+        run: |
+          ./build.sh --armbian "${{ matrix.armbian }}" --release "${{ matrix.release }}" \
+            -- DOCKER_ARMBIAN_BASE_IMAGE="${{ inputs.build_host || 'debian:bookworm' }}"
 
       - name: Collect images
         run: |
