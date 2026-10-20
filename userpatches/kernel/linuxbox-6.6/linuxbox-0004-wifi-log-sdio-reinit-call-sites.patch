@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ThirdReality <dev@3reality.com>
+Date: Mon, 19 Oct 2026 17:30:11 +0800
+Subject: [PATCH] diag(wifi): log which call site drives sdio_reinit()
+
+sdio_reinit() is reached from three places and its own printk does not say
+which, so a boot log cannot tell the normal bring-up apart from the userspace
+fallback.  Two pr_info() lines fix that:
+
+  set_wifi_power(1)     - the path that actually enumerates the card on a good
+                          boot.  Reached from wifi_setup_dt()'s
+                          set_power(0)/msleep(100)/set_power(1) tail, roughly
+                          106ms after the power pin is driven.
+
+  usb_power_control()   - only entered when the W155S1 driver finds the card
+                          missing ("sdio not probe, need set power") and retries
+                          through the ioctl path, about 9s into boot.  On a
+                          healthy boot this never prints; seeing it means the
+                          in-kernel bring-up did not enumerate the card.
+
+pr_info, not pr_err: with the board's loglevel=4 these stay out of the serial
+console and only land in dmesg, so they cost no boot time.
+
+Applies on top of linuxbox-0001 (which adds the file).
+---
+ drivers/amlogic/wifi/wifi_dt.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/amlogic/wifi/wifi_dt.c b/drivers/amlogic/wifi/wifi_dt.c
+index efe1685783..097cb3737a 100644
+--- a/drivers/amlogic/wifi/wifi_dt.c
++++ b/drivers/amlogic/wifi/wifi_dt.c
+@@ -217,6 +217,7 @@
+ 			 if (ret)
+ 				 WIFI_INFO("power2 up failed(%d)\n", ret);
+ 		 }
++		 pr_info("aml_wifi: sdio_reinit() from set_wifi_power(1)\n");
+ 		 sdio_reinit();
+ 	 } else {
+ 		 if (wifi_info.power_on_pin) {
+@@ -235,6 +236,8 @@
+  
+  static void usb_power_control(int is_power, int shift)
+  {
++	 pr_info("aml_wifi: usb_power_control(on=%d, shift=%d) entered, usb_power=%d\n",
++	 	is_power, shift, usb_power);
+ 	 mutex_lock(&wifi_bt_mutex);
+ 	 if (is_power) {
+ 		 if (!usb_power) {

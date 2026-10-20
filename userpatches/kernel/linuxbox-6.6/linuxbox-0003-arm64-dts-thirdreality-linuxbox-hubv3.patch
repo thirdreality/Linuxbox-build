@@ -1,0 +1,399 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "guoping.liu" <guoping.liu@3reality.com>
+Date: Mon, 19 Oct 2026 17:35:47 +0800
+Subject: [PATCH] arm64: dts: amlogic: add ThirdReality LinuxBox HubV3
+
+Standalone board dts on top of meson-axg.dtsi; does not include any
+other vendor board dtsi.
+
+- eMMC on sd_emmc_c, W155S1 WiFi on sd_emmc_b (SDIO), BT on uart_A
+- BL706 Zigbee on uart_AO_B (ttyAML3), Thread on uart_B (ttyAML6)
+- aml_wifi / aml_bt nodes for the W155S1 driver and glue
+- 1 MiB ramoops region at 0x07000000 for post-reset console logs
+- i2c1 and spicc1 are not wired on this board and stay disabled
+---
+ arch/arm64/boot/dts/amlogic/Makefile          |   1 +
+ .../meson-axg-thirdreality-linuxbox-hubv3.dts | 362 ++++++++++++++++++
+ 2 files changed, 363 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/amlogic/meson-axg-thirdreality-linuxbox-hubv3.dts
+
+diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
+index 6539f0c219..720645141a 100644
+--- a/arch/arm64/boot/dts/amlogic/Makefile
++++ b/arch/arm64/boot/dts/amlogic/Makefile
+@@ -6,6 +6,7 @@
+ dtb-$(CONFIG_ARCH_MESON) += meson-axg-jethome-jethub-j100.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-axg-jethome-jethub-j110-rev-2.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-axg-jethome-jethub-j110-rev-3.dtb
++dtb-$(CONFIG_ARCH_MESON) += meson-axg-thirdreality-linuxbox-hubv3.dtb
+ # dtb-$(CONFIG_ARCH_MESON) += meson-axg-s400.dtb
+ # dtb-$(CONFIG_ARCH_MESON) += meson-g12a-radxa-zero.dtb
+ # dtb-$(CONFIG_ARCH_MESON) += meson-g12a-sei510.dtb
+diff --git a/arch/arm64/boot/dts/amlogic/meson-axg-thirdreality-linuxbox-hubv3.dts b/arch/arm64/boot/dts/amlogic/meson-axg-thirdreality-linuxbox-hubv3.dts
+new file mode 100644
+index 0000000000..577c9e3893
+--- /dev/null
++++ b/arch/arm64/boot/dts/amlogic/meson-axg-thirdreality-linuxbox-hubv3.dts
+@@ -0,0 +1,362 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * ThirdReality LinuxBox HubV3: Amlogic A113X, 2GB DDR4, eMMC,
++ * W155S1 WiFi/BT on SDIO + UART_A, BL706 Zigbee/Thread on UART_AO_B/UART_B.
++ *
++ * Copyright (c) 2026 ThirdReality
++ */
++
++/dts-v1/;
++
++#include "meson-axg.dtsi"
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/thermal/thermal.h>
++
++/ {
++	compatible = "thirdreality,linuxbox-hubv3", "amlogic,a113x", "amlogic,meson-axg";
++	model = "ThirdReality LinuxBox HubV3";
++
++	aliases {
++		serial0 = &uart_AO;	/* Console */
++		serial1 = &uart_A;	/* W155S1 Bluetooth */
++		serial3 = &uart_AO_B;	/* Zigbee (ttyAML3) */
++		serial6 = &uart_B;	/* Thread (ttyAML6) */
++		ethernet0 = &ethmac;
++		mmc0 = &sd_emmc_c;	/* eMMC */
++		mmc1 = &sd_emmc_b;	/* SDIO WiFi */
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x0 0x0 0x80000000>;
++	};
++
++	reserved-memory {
++		linux,cma {
++			size = <0x0 0x400000>;
++		};
++
++		/*
++		 * Survives a reset (not a power cut), so a hang that silences the
++		 * console is readable on the next boot in /sys/fs/pstore. Fixed
++		 * address clear of BL2/BL3x, secmon, u-boot load addresses and CMA.
++		 */
++		ramoops@7000000 {
++			compatible = "ramoops";
++			reg = <0x0 0x07000000 0x0 0x00100000>;
++			record-size = <0x00020000>;
++			console-size = <0x00080000>;
++			ecc-size = <16>;
++		};
++	};
++
++	emmc_pwrseq: emmc-pwrseq {
++		compatible = "mmc-pwrseq-emmc";
++		reset-gpios = <&gpio BOOT_9 GPIO_ACTIVE_LOW>;
++	};
++
++	vcc_5v: regulator-vcc_5v {
++		compatible = "regulator-fixed";
++		regulator-name = "VCC5V";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	vddao_3v3: regulator-vddao_3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDAO_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_5v>;
++		regulator-always-on;
++	};
++
++	vcc_3v3: regulator-vcc_3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "VCC_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vddao_3v3>;
++		regulator-always-on;
++	};
++
++	vddio_ao18: regulator-vddio_ao18 {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDIO_AO18";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		vin-supply = <&vddao_3v3>;
++		regulator-always-on;
++	};
++
++	vddio_boot: regulator-vddio_boot {
++		compatible = "regulator-fixed";
++		regulator-name = "VDDIO_BOOT";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vddao_3v3>;
++		regulator-always-on;
++	};
++
++	vccq_1v8: regulator-vccq_1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "VCCQ_1V8";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		vin-supply = <&vddao_3v3>;
++		regulator-always-on;
++	};
++
++	usb_pwr: regulator-usb_pwr {
++		compatible = "regulator-fixed";
++		regulator-name = "USB_PWR";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc_5v>;
++		regulator-always-on;
++	};
++
++	/* W155S1: controlled by the out-of-tree aml_bt / aml_wifi drivers */
++	aml_bt: aml_bt {
++		compatible = "amlogic, aml-bt";
++		status = "okay";
++		reset-gpios = <&gpio GPIOX_21 GPIO_ACTIVE_HIGH>;
++		btwakeup-gpios = <&gpio GPIOZ_6 GPIO_ACTIVE_HIGH>;	/* W1 BT_WAKE_HOST -> SoC */
++		hostwake-gpios = <&gpio GPIOZ_7 GPIO_ACTIVE_HIGH>;	/* SoC -> W1 HOST_WAKE_BT */
++	};
++
++	aml_wifi: aml_wifi {
++		compatible = "amlogic, aml-wifi";
++		status = "okay";
++		irq_trigger_type = "IRQF_TRIGGER_LOW";
++		interrupt-gpios = <&gpio GPIOX_6 GPIO_ACTIVE_HIGH>;
++		power_on-gpios = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
++		pwm_config = <&wifi_pwm_conf>;
++	};
++
++	wifi_pwm_conf: wifi_pwm_conf {
++		pwm_channel1_conf {
++			pwms = <&pwm_AO_cd 0 30541 0>;
++			duty-cycle = <15270>;
++			times = <10>;
++		};
++		pwm_channel2_conf {
++			pwms = <&pwm_AO_cd 2 30500 0>;
++			duty-cycle = <15250>;
++			times = <12>;
++		};
++	};
++
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++			thermal-sensors = <&scpi_sensors 0>;
++
++			trips {
++				cpu_passive: cpu-passive {
++					temperature = <70000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cpu_hot: cpu-hot {
++					temperature = <80000>;
++					hysteresis = <2000>;
++					type = "hot";
++				};
++
++				cpu_critical: cpu-critical {
++					temperature = <100000>;
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cpu_cooling_maps: cooling-maps {
++				map0 {
++					trip = <&cpu_passive>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++
++				map1 {
++					trip = <&cpu_hot>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++};
++
++&cpu0 {
++	#cooling-cells = <2>;
++};
++
++&cpu1 {
++	#cooling-cells = <2>;
++};
++
++&cpu2 {
++	#cooling-cells = <2>;
++};
++
++&cpu3 {
++	#cooling-cells = <2>;
++};
++
++&efuse {
++	sn: sn@32 {
++		reg = <0x32 0x20>;
++	};
++
++	eth_mac: eth_mac@0 {
++		reg = <0x0 0x6>;
++	};
++
++	bt_mac: bt_mac@6 {
++		reg = <0x6 0x6>;
++	};
++
++	wifi_mac: wifi_mac@c {
++		reg = <0xc 0x6>;
++	};
++
++	bid: bid@12 {
++		reg = <0x12 0x20>;
++	};
++};
++
++&ethmac {
++	status = "disabled";
++	pinctrl-0 = <&eth_rmii_x_pins>;
++	pinctrl-names = "default";
++	phy-handle = <&eth_phy0>;
++	phy-mode = "rmii";
++
++	mdio {
++		compatible = "snps,dwmac-mdio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		eth_phy0: ethernet-phy@0 {
++			max-speed = <100>;
++			reg = <0>;
++			reset-assert-us = <10000>;
++			reset-deassert-us = <10000>;
++			reset-gpios = <&gpio GPIOZ_5 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&i2c_AO {
++	status = "disabled";
++	pinctrl-0 = <&i2c_ao_sck_10_pins>, <&i2c_ao_sda_11_pins>;
++	pinctrl-names = "default";
++};
++
++&pwm_ab {
++	status = "okay";
++	pinctrl-0 = <&pwm_a_x20_pins>;
++	pinctrl-names = "default";
++};
++
++&pwm_AO_cd {
++	status = "okay";
++	pinctrl-0 = <&pwm_ao_c_ao8_pins>;
++	pinctrl-names = "default";
++};
++
++/* eMMC */
++&sd_emmc_c {
++	status = "okay";
++	pinctrl-0 = <&emmc_pins>, <&emmc_ds_pins>;
++	pinctrl-1 = <&emmc_clk_gate_pins>;
++	pinctrl-names = "default", "clk-gate";
++
++	bus-width = <8>;
++	cap-mmc-highspeed;
++	max-frequency = <100000000>;
++	non-removable;
++	disable-wp;
++	mmc-ddr-1_8v;
++	mmc-hs200-1_8v;
++	no-sdio;
++
++	mmc-pwrseq = <&emmc_pwrseq>;
++	vmmc-supply = <&vcc_3v3>;
++	vqmmc-supply = <&vccq_1v8>;
++};
++
++/* W155S1 WiFi (SDIO) */
++&sd_emmc_b {
++	status = "okay";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-0 = <&sdio_pins>;
++	pinctrl-1 = <&sdio_clk_gate_pins>;
++	pinctrl-names = "default", "clk-gate";
++
++	bus-width = <4>;
++	cap-sd-highspeed;
++	sd-uhs-sdr12;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	max-frequency = <50000000>;
++	disable-wp;
++	broken-cd;
++
++	vmmc-supply = <&vddao_3v3>;
++	vqmmc-supply = <&vccq_1v8>;
++	non-removable;
++	init_core_phase = <3>;
++	init_tx_phase = <0>;
++	no-mmc;
++	no-sd;
++	keep-power-in-suspend;
++	mmc_debug_flag;
++};
++
++/* Console */
++&uart_AO {
++	status = "okay";
++	pinctrl-0 = <&uart_ao_a_pins>;
++	pinctrl-names = "default";
++};
++
++/* Zigbee */
++&uart_AO_B {
++	status = "okay";
++	pinctrl-0 = <&uart_ao_b_z_pins>;
++	pinctrl-names = "default";
++};
++
++/* W155S1 Bluetooth */
++&uart_A {
++	status = "okay";
++	pinctrl-0 = <&uart_a_pins>, <&uart_a_cts_rts_pins>;
++	pinctrl-names = "default";
++	uart-has-rtscts;
++};
++
++/* Thread */
++&uart_B {
++	status = "okay";
++	pinctrl-0 = <&uart_b_x_pins>;
++	pinctrl-names = "default";
++};
++
++&usb {
++	status = "okay";
++	phy-supply = <&usb_pwr>;
++};
