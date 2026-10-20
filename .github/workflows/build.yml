@@ -1,0 +1,64 @@
+name: build
+
+on:
+  workflow_dispatch:
+    inputs:
+      armbian:
+        description: Armbian tag or branch (see versions.conf)
+        default: v24.11.1
+      release:
+        description: Release codename
+        default: bookworm
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'workflow_dispatch'
+          && format('[{{"armbian":"{0}","release":"{1}"}}]', inputs.armbian, inputs.release)
+          || '[{"armbian":"v24.11.1","release":"bookworm"},{"armbian":"v26.08","release":"noble"}]') }}
+    name: ${{ matrix.armbian }} ${{ matrix.release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # build on the runner's separate /mnt temp disk; / only has ~20 GB free
+      - name: Prepare build space on /mnt
+        run: |
+          df -h / /mnt
+          sudo mkdir -p /mnt/armbian
+          sudo chown "$(id -u):$(id -g)" /mnt/armbian
+          ln -sfn /mnt/armbian armbian
+
+      - name: Build image
+        run: sudo ./build.sh --armbian "${{ matrix.armbian }}" --release "${{ matrix.release }}"
+
+      - name: Collect images
+        run: |
+          df -h / /mnt
+          mkdir -p /mnt/dist
+          cd armbian/${{ matrix.armbian }}/output/images
+          sudo xz -T0 -6 *.img
+          sudo mv *.img.xz *.burn.img.zip *.sha *.txt /mnt/dist/
+          sudo chown -R "$(id -u):$(id -g)" /mnt/dist
+          ls -lh /mnt/dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linuxbox-hubv3-${{ matrix.armbian }}-${{ matrix.release }}
+          path: /mnt/dist/*
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /mnt/dist/*
