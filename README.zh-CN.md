@@ -14,7 +14,7 @@
 |---|---|
 | 内核 | Linux **6.6.158**（固定），Armbian `meson64-6.6` 补丁集 + LinuxBox 补丁 |
 | U-Boot | **v2023.10**（固定），FIP 由 [amlogic-boot-tools](https://github.com/thirdreality/amlogic-boot-tools) 生成 |
-| WiFi / 蓝牙 | Amlogic W155S1 (W1)：`aml_sdio` / `vlsicomm` / `sdio_bt` 驱动、固件、`aml_hciattach` |
+| WiFi / 蓝牙 | Amlogic W155S1 (W1)：`aml_sdio` / `vlsicomm` / `sdio_bt` 驱动、固件、`aml_hciattach`。WiFi 驱动来自 [CoreELEC/w1-aml](https://github.com/CoreELEC/w1-aml)（v1.8.3.3_20260310-w1） |
 | Zigbee / Thread | BL706 烧录工具，打包为 `linuxbox-bl706`（离线，无需联网） |
 | 烧录镜像 | 每次编译自动生成 Amlogic USB Burning Tool 镜像（`*.burn.img.zip`） |
 | 系统 | `/boot` 只读挂载、cgroup v1、NetworkManager（不管理 `p2p0`） |

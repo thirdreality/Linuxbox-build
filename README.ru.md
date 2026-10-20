@@ -14,7 +14,7 @@
 |---|---|
 | Ядро | Linux **6.6.158** (фиксировано), патчи Armbian `meson64-6.6` + патчи LinuxBox |
 | U-Boot | **v2023.10** (фиксировано), FIP собирается с помощью [amlogic-boot-tools](https://github.com/thirdreality/amlogic-boot-tools) |
-| WiFi / Bluetooth | Amlogic W155S1 (W1): драйверы `aml_sdio` / `vlsicomm` / `sdio_bt`, прошивки, `aml_hciattach` |
+| WiFi / Bluetooth | Amlogic W155S1 (W1): драйверы `aml_sdio` / `vlsicomm` / `sdio_bt`, прошивки, `aml_hciattach`. Драйвер WiFi из [CoreELEC/w1-aml](https://github.com/CoreELEC/w1-aml) (v1.8.3.3_20260310-w1) |
 | Zigbee / Thread | Прошивальщик BL706 в пакете `linuxbox-bl706` (работает без сети) |
 | Образ для прошивки | Образ для Amlogic USB Burning Tool (`*.burn.img.zip`) создаётся при каждой сборке |
 | Система | `/boot` только для чтения, cgroup v1, NetworkManager (`p2p0` не управляется) |

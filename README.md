@@ -14,7 +14,7 @@ so moving to a new Armbian release is a one-line change.
 |---|---|
 | Kernel | Linux **6.6.158** (fixed), Armbian `meson64-6.6` patch set + LinuxBox patches |
 | U-Boot | **v2023.10** (fixed), FIP built with [amlogic-boot-tools](https://github.com/thirdreality/amlogic-boot-tools) |
-| WiFi / Bluetooth | Amlogic W155S1 (W1): `aml_sdio` / `vlsicomm` / `sdio_bt` drivers, firmware, `aml_hciattach` |
+| WiFi / Bluetooth | Amlogic W155S1 (W1): `aml_sdio` / `vlsicomm` / `sdio_bt` drivers, firmware, `aml_hciattach`. WiFi driver from [CoreELEC/w1-aml](https://github.com/CoreELEC/w1-aml) (v1.8.3.3_20260310-w1) |
 | Zigbee / Thread | BL706 flasher packaged as `linuxbox-bl706` (offline, no network needed) |
 | Burn image | Amlogic USB Burning Tool image (`*.burn.img.zip`) produced automatically with every build |
 | System | `/boot` mounted read-only, cgroup v1, NetworkManager (`p2p0` unmanaged) |

@@ -5,6 +5,7 @@ Subject: [PATCH] Add Amlogic W155S1 drivers
 
 WiFi: Amlogic W1 v1.8.3.3_20260310-w1
       driver:888ce88b817c15e731df70f+612585+643887+589776
+      source: https://github.com/CoreELEC/w1-aml (branch v1.8.3.3_20260310-w1)
 BT:   Amlogic sdio_driver_bt (unchanged)
 
 Local changes on top of the vendor drop:
