@@ -32,34 +32,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # build on the runner's separate /mnt temp disk; / only has ~20 GB free
-      - name: Prepare build space on /mnt
-        run: |
-          df -h / /mnt
-          sudo mkdir -p /mnt/armbian
-          sudo chown "$(id -u):$(id -g)" /mnt/armbian
-          ln -sfn /mnt/armbian armbian
-
       # non-root: Armbian relaunches itself in a container built FROM build_host (same gcc 12 as local Debian 12 builds)
       - name: Build image
         run: |
           ./build.sh --armbian "${{ matrix.armbian }}" --release "${{ matrix.release }}" \
             -- DOCKER_ARMBIAN_BASE_IMAGE="${{ inputs.build_host || 'debian:bookworm' }}"
 
+      # The build runs in Docker as root, so the outputs need an explicit chown
+      # before the upload steps (they run as the runner user).
       - name: Collect images
         run: |
-          df -h / /mnt
-          mkdir -p /mnt/dist
-          cd armbian/${{ matrix.armbian }}/output/images
+          df -h /
+          cd "armbian/${{ matrix.armbian }}/output/images"
           sudo xz -T0 -6 *.img
-          sudo mv *.img.xz *.burn.img.zip *.sha *.txt /mnt/dist/
-          sudo chown -R "$(id -u):$(id -g)" /mnt/dist
-          ls -lh /mnt/dist
+          sudo chown -R "$(id -u):$(id -g)" .
+          shopt -s nullglob
+          mkdir -p dist
+          mv *.img.xz *.burn.img.zip *.sha *.txt dist/
+          ls -lh dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: linuxbox-hubv3-${{ matrix.armbian }}-${{ matrix.release }}
-          path: /mnt/dist/*
+          path: armbian/${{ matrix.armbian }}/output/images/dist/*
           compression-level: 0
           retention-days: 14
 
@@ -67,4 +62,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: /mnt/dist/*
+          files: armbian/${{ matrix.armbian }}/output/images/dist/*
